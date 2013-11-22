@@ -6,6 +6,7 @@ classes/local/*.php
 templates/local
 vendor/
 
+/hq_reports
 /composer.lock
 /.buildpath
 /.settings
