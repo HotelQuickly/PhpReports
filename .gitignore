@@ -5,3 +5,8 @@ cache/
 classes/local/*.php
 templates/local
 vendor/
+
+/composer.lock
+/.buildpath
+/.settings
+/.project
