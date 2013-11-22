@@ -5,3 +5,5 @@ cache/
 classes/local/*.php
 templates/local
 vendor/
+
+reports
