@@ -3,6 +3,9 @@ return array(
 	//the root directory of all your reports
 	//reports can be organized in subdirectories
 	'reportDir' => 'sample_reports',
+
+	//the root directory of all dashboards
+	'dashboardDir' => 'sample_dashboards',
 	
 	//the directory where things will be cached
 	//this is relative to the project root by default, but can be set to an absolute path too
@@ -76,6 +79,16 @@ return array(
 		'encryption'=>'ssl' 				//optional (either 'ssl' or 'tls')
 		*/
 	),
+	
+	// Google Analytics API Integration
+	/*
+	'ga_api'=>array(
+		'applicationName'=>'PHP Reports',
+		'clientId'=>'abcdef123456',
+		'clientSecret'=>'1234abcd',
+		'redirectUri'=>'http://example.com/'
+	),
+	*/
 
 	//this defines the database environments
 	//the keys are the environment names (e.g. "dev", "production")

@@ -16,7 +16,13 @@ class PhpReports {
 		if(!file_exists($config)) {
 			throw new Exception("Cannot find config file");
 		}
-		
+
+		// The config.php.sample is used to populate default values should the config.php be incomplete.
+		// As a result, we require it be there.
+		if(!file_exists('config/config.php.sample')) {
+			throw new Exception("Cannot find sample config. Please leave config/config.php.sample in place for default values.");
+		}
+
 		$default_config = include('config/config.php.sample');
 		$config = include($config);
 	
@@ -49,6 +55,8 @@ class PhpReports {
 
         self::$twig->addGlobal('theme', $_COOKIE['reports-theme'] != '' ? $_COOKIE['reports-theme'] : self::$config['bootstrap_theme']);
         self::$twig->addGlobal('path', $path);
+
+		self::$twig->addFilter('var_dump', new Twig_Filter_Function('var_dump'));
 
 		self::$twig_string = new Twig_Environment(new Twig_Loader_String(), array('autoescape'=>false));
         self::$twig_string->addFunction(new Twig_SimpleFunction('sqlin', 'PhpReports::generateSqlIN'));
@@ -139,7 +147,8 @@ class PhpReports {
 			'querystring'=>$_SERVER['QUERY_STRING'],
 			'config'=>self::$config,
 			'environment'=>$_SESSION['environment'],
-			'recent_reports'=>self::getRecentReports()
+			'recent_reports'=>self::getRecentReports(),
+			'session'=>$_SESSION
 		);
 		$macros = array_merge($default,$macros);
 		
@@ -232,6 +241,48 @@ class PhpReports {
 		$start = microtime(true);
 		echo self::render('html/report_list',$template_vars);
 	}
+	
+	public static function listDashboards() {
+		$dashboards = self::getDashboards();
+		
+		uasort($dashboards,function($a,$b) {
+			return strcmp($a['title'],$b['title']);
+		});
+		
+		echo self::render('html/dashboard_list',array(
+			'dashboards'=>$dashboards
+		));
+	}
+	
+	public static function displayDashboard($dashboard) {
+		$content = self::getDashboard($dashboard);
+		
+		echo self::render('html/dashboard',array(
+			'dashboard'=>$content
+		));
+	}
+	
+	public static function getDashboards() {
+		$dashboards = glob(PhpReports::$config['dashboardDir'].'/*.json');
+		
+		$ret = array();
+		foreach($dashboards as $key=>$value) {
+			$name = basename($value,'.json');
+			$ret[$name] = self::getDashboard($name);
+		}
+		
+		return $ret;
+	}
+	
+	public static function getDashboard($dashboard) {
+		$file = PhpReports::$config['dashboardDir'].'/'.$dashboard.'.json';
+		if(!file_exists($file)) {
+			throw new Exception("Unknown dashboard - ".$dashboard);
+		}
+		
+		return json_decode(file_get_contents($file),true);
+	}
+	
 	public static function getRecentReports() {
 		$recently_run = FileSystemCache::retrieve(FileSystemCache::generateCacheKey('recently_run'));
 		$recent = array();
@@ -307,7 +358,7 @@ class PhpReports {
 		//the url parameter ?nocache will bypass this and not use cache
 		$data =false;
 		if(!isset($_REQUEST['nocache'])) {
-			$data = FileSystemCache::retrieve($cacheKey, filemtime($report));
+			$data = FileSystemCache::retrieve($cacheKey, filemtime(Report::getFileLocation($report)));
 		}
 
 		//report data not cached, need to parse it
